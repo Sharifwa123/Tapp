@@ -6,4 +6,5 @@ export type RootStackParamList = {
   Library: undefined;
   ProjectDetail: { projectId: string };
   Analysis: { mediaItemId: string };
+  Settings: undefined;
 };
