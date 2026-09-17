@@ -1,15 +1,14 @@
 // mobile/src/services/mediaService.ts
-import * as FileSystem from "expo-file-system";
+import { Directory, File, Paths } from "expo-file-system";
 import { createProject } from "../storage/projectRepository";
 import { createMediaItem } from "../storage/mediaRepository";
 import type { MediaItem, MediaKind } from "../storage/types";
 
-const MEDIA_DIR = `${FileSystem.documentDirectory}tapp-media/`;
+const mediaDir = new Directory(Paths.document, "tapp-media");
 
-async function ensureMediaDir(): Promise<void> {
-  const info = await FileSystem.getInfoAsync(MEDIA_DIR);
-  if (!info.exists) {
-    await FileSystem.makeDirectoryAsync(MEDIA_DIR, { intermediates: true });
+function ensureMediaDir(): void {
+  if (!mediaDir.exists) {
+    mediaDir.create({ intermediates: true });
   }
 }
 
@@ -39,15 +38,15 @@ export async function importMediaAsNewProject(params: {
   projectName?: string;
   durationMs?: number | null;
 }): Promise<ImportedMedia> {
-  await ensureMediaDir();
+  ensureMediaDir();
 
   const kind = inferKindFromMime(params.mimeType, params.fileName);
-  const destUri = `${MEDIA_DIR}${Date.now()}-${params.fileName}`;
+  const sourceFile = new File(params.sourceUri);
+  const destFile = new File(mediaDir, `${Date.now()}-${params.fileName}`);
 
-  await FileSystem.copyAsync({ from: params.sourceUri, to: destUri });
+  await sourceFile.copy(destFile);
 
-  const info = await FileSystem.getInfoAsync(destUri);
-  const sizeBytes = info.exists && "size" in info ? info.size : 0;
+  const sizeBytes = destFile.exists ? destFile.size : 0;
 
   const project = await createProject(params.projectName || params.fileName);
 
@@ -55,7 +54,7 @@ export async function importMediaAsNewProject(params: {
     projectId: project.id,
     kind,
     fileName: params.fileName,
-    fileUri: destUri,
+    fileUri: destFile.uri,
     isOriginal: true,
     durationMs: params.durationMs ?? null,
     sizeBytes,
@@ -76,8 +75,8 @@ export async function registerDerivedMedia(params: {
   languageCode?: string | null;
   durationMs?: number | null;
 }): Promise<MediaItem> {
-  const info = await FileSystem.getInfoAsync(params.fileUri);
-  const sizeBytes = info.exists && "size" in info ? info.size : 0;
+  const file = new File(params.fileUri);
+  const sizeBytes = file.exists ? file.size : 0;
 
   return createMediaItem({
     projectId: params.projectId,

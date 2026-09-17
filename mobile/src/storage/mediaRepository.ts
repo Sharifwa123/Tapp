@@ -1,5 +1,5 @@
 // mobile/src/storage/mediaRepository.ts
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
 import { getDatabase } from "./database";
 import type { MediaItem, MediaKind } from "./types";
 
@@ -99,8 +99,8 @@ export async function getAllMediaItemsByKind(kind: MediaKind): Promise<MediaItem
 // the DB row (or before deleting a project) — SQLite cascade deletes
 // only clean up rows, never the actual files they reference.
 export async function deleteMediaFile(item: MediaItem): Promise<void> {
-  const info = await FileSystem.getInfoAsync(item.fileUri);
-  if (info.exists) {
-    await FileSystem.deleteAsync(item.fileUri, { idempotent: true });
+  const file = new File(item.fileUri);
+  if (file.exists) {
+    file.delete();
   }
 }

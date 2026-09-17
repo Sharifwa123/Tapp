@@ -35,15 +35,17 @@ jobs:
 
       - name: Prebuild native Android project
         working-directory: mobile
-        run: npx expo prebuild --platform android --non-interactive
+        run: npx expo prebuild --platform android
+        env:
+          CI: "1"
 
       - name: Make gradlew executable
         working-directory: mobile/android
         run: chmod +x gradlew
 
-      - name: Build debug APK
+      - name: Build release APK
         working-directory: mobile/android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleRelease
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
@@ -52,4 +54,4 @@ jobs:
           name: Latest build
           body: Automatically built from commit ${{ github.sha }}.
           prerelease: true
-          files: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          files: mobile/android/app/build/outputs/apk/release/app-release.apk

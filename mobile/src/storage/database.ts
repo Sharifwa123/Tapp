@@ -15,6 +15,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
+    PRAGMA foreign_keys = ON;
 
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY NOT NULL,

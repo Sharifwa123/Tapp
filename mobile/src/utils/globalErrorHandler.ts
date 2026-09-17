@@ -12,7 +12,7 @@ import { Alert } from "react-native";
 // Call setupGlobalErrorHandler() at the very top of App.tsx, before any
 // other imports if possible.
 export function setupGlobalErrorHandler(): void {
-  const globalAny = global as any;
+  const globalAny = globalThis as any;
 
   if (typeof globalAny.ErrorUtils !== "undefined") {
     const originalHandler = globalAny.ErrorUtils.getGlobalHandler();
