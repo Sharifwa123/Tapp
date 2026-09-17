@@ -1,5 +1,6 @@
 // mobile/src/services/apiClient.ts
-import { getCredentials } from "./credentialsService";
+import { getCredentialsForProvider } from "./credentialsService";
+import type { ProviderName } from "./credentialsService";
 import type { TranscriptionResult, TranslationResult, SummarizationResult, SummaryStyle } from "../providers/types";
 
 // Points at your backend. In development this is your machine's LAN/tunnel
@@ -9,15 +10,20 @@ import type { TranscriptionResult, TranslationResult, SummarizationResult, Summa
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 class MissingCredentialsError extends Error {
-  constructor() {
-    super("No AI provider configured. Add your API key in Settings first.");
+  constructor(provider: ProviderName) {
+    super(`No ${provider} key configured. Add one in Settings first.`);
     this.name = "MissingCredentialsError";
   }
 }
 
-async function authHeaders(): Promise<Record<string, string>> {
-  const creds = await getCredentials();
-  if (!creds) throw new MissingCredentialsError();
+// Each backend endpoint only works with one specific provider (see
+// backend/src/providers/registry.ts) — transcription is OpenAI-only,
+// translation/summarization are Anthropic-only — so headers are built
+// from whichever key is active for THAT provider, not a single
+// app-wide "current provider".
+async function authHeaders(provider: ProviderName): Promise<Record<string, string>> {
+  const creds = await getCredentialsForProvider(provider);
+  if (!creds) throw new MissingCredentialsError(provider);
   return {
     "x-ai-provider": creds.provider,
     "x-ai-key": creds.apiKey,
@@ -29,7 +35,7 @@ export async function transcribeAudio(
   fileName: string,
   languageHint?: string
 ): Promise<TranscriptionResult> {
-  const headers = await authHeaders();
+  const headers = await authHeaders("openai");
 
   const form = new FormData();
   form.append("file", {
@@ -58,7 +64,7 @@ export async function translateText(
   targetLanguage: string,
   sourceLanguage?: string
 ): Promise<TranslationResult> {
-  const headers = await authHeaders();
+  const headers = await authHeaders("anthropic");
 
   const response = await fetch(`${API_BASE_URL}/api/translate`, {
     method: "POST",
@@ -75,7 +81,7 @@ export async function translateText(
 }
 
 export async function summarizeText(text: string, style: SummaryStyle): Promise<SummarizationResult> {
-  const headers = await authHeaders();
+  const headers = await authHeaders("anthropic");
 
   const response = await fetch(`${API_BASE_URL}/api/summarize`, {
     method: "POST",
