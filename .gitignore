@@ -1,0 +1,8 @@
+# Local AI coding assistant config/state — never part of the shipped
+# product, regardless of which tool a contributor uses.
+.claude/
+.cursor/
+.copilot/
+.windsurf/
+CLAUDE.md
+AGENTS.md
