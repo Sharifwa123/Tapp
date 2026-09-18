@@ -1,7 +1,13 @@
 // mobile/src/screens/RecordScreen.tsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet, Alert, TextInput } from "react-native";
-import { Audio } from "expo-av";
+import {
+  useAudioRecorder,
+  useAudioRecorderState,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  RecordingPresets,
+} from "expo-audio";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/types";
 import { importMediaAsNewProject } from "../services/mediaService";
@@ -18,95 +24,65 @@ function formatDuration(ms: number): string {
 }
 
 export default function RecordScreen({ navigation }: Props) {
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(recorder, 250);
+
   const [state, setState] = useState<RecordState>("idle");
-  const [elapsedMs, setElapsedMs] = useState(0);
+  const [finalDurationMs, setFinalDurationMs] = useState(0);
   const [recordingName, setRecordingName] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const pausedAccumRef = useRef<number>(0);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const displayMs = state === "stopped" ? finalDurationMs : recorderState.durationMillis;
 
   useEffect(() => {
     return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-      // If the screen unmounts mid-recording, stop and discard rather
-      // than leaving a dangling native recording session.
-      recordingRef.current?.stopAndUnloadAsync().catch(() => {});
+      // If the screen unmounts mid-recording, stop rather than leaving a
+      // dangling native recording session.
+      if (recorder.isRecording) recorder.stop().catch(() => {});
     };
-  }, []);
-
-  function startTick() {
-    startTimeRef.current = Date.now();
-    tickRef.current = setInterval(() => {
-      setElapsedMs(pausedAccumRef.current + (Date.now() - startTimeRef.current));
-    }, 250);
-  }
-
-  function stopTick() {
-    if (tickRef.current) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
-    }
-  }
+  }, [recorder]);
 
   async function handleStart() {
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
         Alert.alert("Microphone permission needed", "Enable microphone access to record.");
         return;
       }
 
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      recordingRef.current = recording;
-      pausedAccumRef.current = 0;
-      setElapsedMs(0);
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await recorder.prepareToRecordAsync();
+      recorder.record();
       setState("recording");
-      startTick();
     } catch (err: any) {
       Alert.alert("Could not start recording", String(err.message || err));
     }
   }
 
-  async function handlePause() {
-    if (!recordingRef.current) return;
-    await recordingRef.current.pauseAsync();
-    stopTick();
-    pausedAccumRef.current = elapsedMs;
+  function handlePause() {
+    recorder.pause();
     setState("paused");
   }
 
-  async function handleResume() {
-    if (!recordingRef.current) return;
-    await recordingRef.current.startAsync();
-    startTick();
+  function handleResume() {
+    recorder.record();
     setState("recording");
   }
 
   async function handleStop() {
-    if (!recordingRef.current) return;
-    stopTick();
-    await recordingRef.current.stopAndUnloadAsync();
+    setFinalDurationMs(recorderState.durationMillis);
+    await recorder.stop();
     setState("stopped");
   }
 
   function handleCancel() {
-    stopTick();
-    recordingRef.current?.stopAndUnloadAsync().catch(() => {});
-    recordingRef.current = null;
-    setElapsedMs(0);
+    recorder.stop().catch(() => {});
+    setFinalDurationMs(0);
     setState("idle");
   }
 
   async function handleSave() {
-    if (!recordingRef.current) return;
-    const uri = recordingRef.current.getURI();
+    const uri = recorder.uri;
     if (!uri) {
       Alert.alert("Nothing to save", "The recording has no audio file.");
       return;
@@ -120,7 +96,7 @@ export default function RecordScreen({ navigation }: Props) {
         fileName: `${name}.m4a`,
         mimeType: "audio/m4a",
         projectName: name,
-        durationMs: elapsedMs,
+        durationMs: finalDurationMs,
       });
       navigation.replace("ProjectDetail", { projectId: project.id });
     } catch (err: any) {
@@ -132,7 +108,7 @@ export default function RecordScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.timer}>{formatDuration(elapsedMs)}</Text>
+      <Text style={styles.timer}>{formatDuration(displayMs)}</Text>
 
       {state === "stopped" ? (
         <View style={styles.savePanel}>
