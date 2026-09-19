@@ -76,6 +76,10 @@ export default function ProjectDetailScreen({ route, navigation }: Props) {
             <Text style={styles.cardTitle}>{original.fileName}</Text>
             <Text style={styles.cardSubtitle}>Original · {original.kind}</Text>
           </View>
+          <View style={styles.openBtn}>
+            <Text style={styles.openBtnText}>Open</Text>
+            <Text style={styles.chevron}>›</Text>
+          </View>
         </Pressable>
       )}
 
@@ -135,6 +139,17 @@ const styles = StyleSheet.create({
   },
   kindIcon: { fontSize: 24 },
   cardText: { flex: 1 },
+  openBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "#1a1d1f",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  openBtnText: { color: "white", fontSize: 13, fontWeight: "600" },
+  chevron: { color: "white", fontSize: 15, fontWeight: "700", marginLeft: 1 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: "#1a1d1f" },
   cardSubtitle: { fontSize: 12, color: "#6b6862", marginTop: 2 },
   sectionTitle: { fontSize: 14, fontWeight: "600", color: "#1a1d1f", marginBottom: 10 },

@@ -51,8 +51,11 @@ export default function LibraryScreen({ navigation }: Props) {
               style={styles.card}
               onPress={() => navigation.navigate("ProjectDetail", { projectId: item.id })}
             >
-              <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardSubtitle}>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+              <View style={styles.cardText}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardSubtitle}>{new Date(item.updatedAt).toLocaleDateString()}</Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
             </Pressable>
           )}
         />
@@ -73,6 +76,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   card: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#d8d3c8",
@@ -80,8 +85,10 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
   },
+  cardText: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: "#1a1d1f" },
   cardSubtitle: { fontSize: 12, color: "#6b6862", marginTop: 4 },
+  chevron: { fontSize: 18, fontWeight: "700", color: "#a8a29a", marginLeft: 8 },
   emptyState: { padding: 24, alignItems: "center" },
   emptyStateText: { color: "#6b6862", fontSize: 13 },
 });

@@ -55,10 +55,13 @@ export default function HomeScreen({ navigation }: Props) {
             style={styles.projectCard}
             onPress={() => navigation.navigate("ProjectDetail", { projectId: project.id })}
           >
-            <Text style={styles.projectTitle}>{project.name}</Text>
-            <Text style={styles.projectSubtitle}>
-              {new Date(project.updatedAt).toLocaleDateString()}
-            </Text>
+            <View style={styles.projectCardText}>
+              <Text style={styles.projectTitle}>{project.name}</Text>
+              <Text style={styles.projectSubtitle}>
+                {new Date(project.updatedAt).toLocaleDateString()}
+              </Text>
+            </View>
+            <Text style={styles.chevron}>›</Text>
           </Pressable>
         ))
       )}
@@ -95,6 +98,8 @@ const styles = StyleSheet.create({
   },
   emptyStateText: { color: "#6b6862", fontSize: 13, textAlign: "center" },
   projectCard: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#d8d3c8",
@@ -102,6 +107,8 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 8,
   },
+  projectCardText: { flex: 1 },
   projectTitle: { fontSize: 15, fontWeight: "600", color: "#1a1d1f" },
   projectSubtitle: { fontSize: 12, color: "#6b6862", marginTop: 4 },
+  chevron: { fontSize: 18, fontWeight: "700", color: "#a8a29a", marginLeft: 8 },
 });

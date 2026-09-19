@@ -1,5 +1,5 @@
 // mobile/src/screens/RecordScreen.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet, Alert, TextInput } from "react-native";
 import {
   useAudioRecorder,
@@ -34,13 +34,11 @@ export default function RecordScreen({ navigation }: Props) {
 
   const displayMs = state === "stopped" ? finalDurationMs : recorderState.durationMillis;
 
-  useEffect(() => {
-    return () => {
-      // If the screen unmounts mid-recording, stop rather than leaving a
-      // dangling native recording session.
-      if (recorder.isRecording) recorder.stop().catch(() => {});
-    };
-  }, [recorder]);
+  // No manual unmount cleanup here: useAudioRecorder already releases the
+  // native recorder when this screen unmounts. Touching `recorder` again
+  // after that (e.g. in a later-registered effect's cleanup) throws
+  // "shared object that was already released", since effect cleanups run
+  // in the same order the effects were set up, not reversed.
 
   async function handleStart() {
     try {
